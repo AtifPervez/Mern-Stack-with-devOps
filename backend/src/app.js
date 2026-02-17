@@ -1,5 +1,6 @@
 const express = require('express')
 const router = require('./router/route')
+require('dotenv').config({path:'./.env'})
 const mongoose = require('mongoose')
 const cors = require('cors')
 const bodyParser = require('body-parser')
@@ -7,8 +8,8 @@ const app = express()
 app.use(cors())
 
 app.use(bodyParser.json())
-mongoose.connect('mongodb+srv://atifpervez:34BmDa5XVvtznQvO@code.8mvlc.mongodb.net/eveserverind_cpanel_59')
 
+mongoose.connect(process.env.MONGO_URL)
     .then(() => console.log('Mongodb is connected'))
     .catch((err) => console.log(err))
 
@@ -39,15 +40,15 @@ app.listen(3000, () => {
 
 
 //left rotation by one elements
-const arr = [1, 2, 3, 4, 5]//output=[2,3,4,5,1]
-function leftRotation(arr) {
-    const firstEle = arr[0]
-    for (let i = 0; i < arr.length - 1; i++) {
-        arr[i] = arr[i + 1]
-    }
-    arr[arr.length - 1] = firstEle
-    return arr
-}
-const res = leftRotation(arr)
-console.log(res);
+// const arr = [1, 2, 3, 4, 5]//output=[2,3,4,5,1]
+// function leftRotation(arr) {
+//     const firstEle = arr[0]
+//     for (let i = 0; i < arr.length - 1; i++) {
+//         arr[i] = arr[i + 1]
+//     }
+//     arr[arr.length - 1] = firstEle
+//     return arr
+// }
+// const res = leftRotation(arr)
+// console.log(res);
 
