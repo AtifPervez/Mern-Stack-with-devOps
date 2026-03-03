@@ -6,6 +6,7 @@ const Employee = mongoose.model(
     new mongoose.Schema({}, { strict: false, collection: 'eve_acc_employee' })
 );
 
+
 const eve_acc_employee_attendence = mongoose.model(
     'eve_acc_employee_attendence',
     new mongoose.Schema({}, { strict: false, collection: 'eve_acc_employee_attendence' })
@@ -16,55 +17,42 @@ const eve_acc_employee_attendence = mongoose.model(
 const getMonthlyAttendance = async (req, res) => {
     try {
         const data = req.body
-        const { year, month } = data
+        const { year, month, employeeName, employeeCode, employeeSubCompanyId, employeeBranchId } = data
         const page = Number(req.body.page) || 1;
         const limit = Number(req.body.limit) || 10;
         const skip = (page - 1) * limit;
 
+        const matchStage =
+        {
+            employeeCurrentStatus: { $in: ['offerletter', 'Active', 'resignation', 'joining', 'termination', 'release'] },
+            status: 'A'
+        };
+
+        if (employeeName) matchStage.employeeName = { $regex: employeeName, $options: "i" };
+        if (employeeCode) matchStage.employeeCode = employeeCode
+        if (employeeSubCompanyId) matchStage.employeeSubCompanyId = employeeSubCompanyId
+        if (employeeBranchId) matchStage.employeeBranchId = employeeBranchId
 
         const employees = await Employee.aggregate([
-            {
-                $match: {
-                    employeeCurrentStatus: {
-                        $in: [
-                            'offerletter',
-                            'Active',
-                            'resignation',
-                            'joining',
-                            'termination',
-                            'release'
-                        ]
-                    }, status: 'A'
-                }
-            },
+            { $match: matchStage },
             {
                 $lookup: {
-                    from: "eve_acc_locationmaster",
-                    localField: "locationID",
-                    foreignField: "id",
-                    as: "locationInfo"
+                    from: "eve_acc_locationmaster", localField: "locationID", foreignField: "id", as: "locationInfo"
                 }
             },
             {
-                $lookup: {
-                    from: "eve_acc_company_branch",
-                    localField: "employeeBranchId",
-                    foreignField: "branchId",
-                    as: "branchInfo"
-                }
+                $lookup: { from: "eve_acc_company_branch", localField: "employeeBranchId", foreignField: "branchId", as: "branchInfo" }
             },
             {
-                $unwind: {
-                    path: "$locationInfo",
-                    preserveNullAndEmptyArrays: true
-                }
+                $unwind: { path: "$locationInfo", preserveNullAndEmptyArrays: true }
             },
             {
-                $unwind: {
-                    path: "$branchInfo",
-                    preserveNullAndEmptyArrays: true
-                }
+                $unwind: { path: "$branchInfo", preserveNullAndEmptyArrays: true }
             },
+
+
+
+
             {
                 $project: {
                     id: 1,
@@ -93,6 +81,7 @@ const getMonthlyAttendance = async (req, res) => {
 
 
         await Promise.all(employees.map(async (e, i) => {
+            e.slno = skip + i + 1
             let arr = []
             for (let i = 1; i <= noOfDaysMonth; i++) {
                 let day = i.toString().padStart(2, '0')
@@ -129,16 +118,6 @@ const getMonthlyAttendance = async (req, res) => {
             })
 
         }))
-
-
-
-
-
-
-
-
-
-
 
 
         res.status(200).json({
